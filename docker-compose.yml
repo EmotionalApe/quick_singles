@@ -4,7 +4,7 @@ services :
     environment:
       POSTGRES_USER : cricket
       POSTGRES_PASSWORD : cricket
-      POSTGRES_DB : cricket-scorer
+      POSTGRES_DB : cricket_scorer
     ports:
       - "5432:5432"
     volumes:
