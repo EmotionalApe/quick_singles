@@ -27,20 +27,16 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="text-base font-black tracking-tight text-black">
               Quick Singles
             </span>
-            <span className="rounded-full border border-black bg-[#d7f0db] px-2 py-0.2 text-[10px] font-bold text-black uppercase tracking-wider">
-              Live
-            </span>
           </div>
         </Link>
 
         <div className="flex items-center gap-2">
           {matchId && role && (
             <span
-              className={`inline-flex items-center rounded-full border-2 border-black px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider shadow-[1px_1px_0px_#000] ${
-                role === 'SCORER'
+              className={`inline-flex items-center rounded-full border-2 border-black px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider shadow-[1px_1px_0px_#000] ${role === 'SCORER'
                   ? 'bg-[#ffd260] text-black'
                   : 'bg-white text-black'
-              }`}
+                }`}
             >
               {role}
             </span>
