@@ -5,6 +5,7 @@ from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.db.database import SessionLocal
 from app.models.event import MatchEvent
 from app.models.match import Match
@@ -375,7 +376,9 @@ def join_as_scorer(
             key="scorer_token",
             value=scorer_token,
             httponly=True,
-            samesite="lax",
+            samesite=settings.COOKIE_SAMESITE,
+            secure=settings.cookie_secure,
+            domain=settings.COOKIE_DOMAIN,
         )
         return {
             "status": "SCORER",
@@ -400,7 +403,9 @@ def join_as_scorer(
         key="scorer_token",
         value=new_token,
         httponly=True,
-        samesite="lax",
+        samesite=settings.COOKIE_SAMESITE,
+        secure=settings.cookie_secure,
+        domain=settings.COOKIE_DOMAIN,
     )
 
     return {
@@ -435,6 +440,9 @@ def leave_scorer(
 
     response.delete_cookie(
         key="scorer_token",
+        domain=settings.COOKIE_DOMAIN,
+        samesite=settings.COOKIE_SAMESITE,
+        secure=settings.cookie_secure,
     )
 
     return {

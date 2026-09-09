@@ -1,13 +1,47 @@
-services : 
-  postgres : 
-    image : postgres:17
+services:
+  postgres:
+    image: postgres:17
     environment:
-      POSTGRES_USER : cricket
-      POSTGRES_PASSWORD : cricket
-      POSTGRES_DB : cricket_scorer
+      POSTGRES_USER: ${POSTGRES_USER:-cricket}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cricket}
+      POSTGRES_DB: ${POSTGRES_DB:-cricket_scorer}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cricket} -d ${POSTGRES_DB:-cricket_scorer}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - DATABASE_URL=postgresql+psycopg://${POSTGRES_USER:-cricket}:${POSTGRES_PASSWORD:-cricket}@postgres:5432/${POSTGRES_DB:-cricket_scorer}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost,http://localhost:80,http://localhost:5173,http://localhost:3000}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+      - COOKIE_SAMESITE=${COOKIE_SAMESITE:-lax}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:
