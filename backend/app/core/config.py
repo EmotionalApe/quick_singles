@@ -27,6 +27,19 @@ class Settings(BaseSettings):
     COOKIE_SAMESITE: str = "lax"
     COOKIE_DOMAIN: str | None = None
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, value: str) -> str:
+        if isinstance(value, str):
+            val = value.strip()
+            # Standardize postgresql driver to psycopg (v3)
+            if val.startswith("postgres://"):
+                return val.replace("postgres://", "postgresql+psycopg://", 1)
+            elif val.startswith("postgresql://") and not val.startswith("postgresql+"):
+                return val.replace("postgresql://", "postgresql+psycopg://", 1)
+            return val
+        return value
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, value: Union[List[str], str]) -> List[str]:
