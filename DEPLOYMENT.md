@@ -130,3 +130,42 @@ Expected response:
 ```json
 {"status": "ok", "environment": "production", "app": "Cricket Scorer"}
 ```
+
+---
+
+## Database Retention & Automated Cleanup
+
+To prevent the free database from filling up over time, old matches and their associated events can be deleted automatically or via a CLI script.
+
+### Method 1: Standalone CLI Script
+
+You can run the script manually or configure it as a cron task:
+
+```bash
+# Delete matches older than 24 hours:
+python scripts/cleanup_old_matches.py --hours 24
+
+# Delete matches older than 7 days:
+python scripts/cleanup_old_matches.py --days 7
+
+# Preview what would be deleted without deleting anything (Dry Run):
+python scripts/cleanup_old_matches.py --hours 48 --dry-run
+
+# Delete only matches marked as 'COMPLETED':
+python scripts/cleanup_old_matches.py --hours 24 --only-completed
+```
+
+### Method 2: Scheduled HTTP Webhook (Free via cron-job.org or GitHub Actions)
+
+If using Render or cloud hosting, you can set an `ADMIN_API_KEY` in your environment variables:
+```bash
+ADMIN_API_KEY="your-secret-cleanup-key"
+```
+
+Then trigger the cleanup endpoint on a schedule via curl or any free cron scheduler (e.g. [cron-job.org](https://cron-job.org)):
+
+```bash
+curl -X POST "https://your-api.onrender.com/matches/maintenance/cleanup?hours=24" \
+     -H "X-Admin-Key: your-secret-cleanup-key"
+```
+

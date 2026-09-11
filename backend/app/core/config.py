@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     COOKIE_SAMESITE: str = "lax"
     COOKIE_DOMAIN: str | None = None
 
+    # Admin API Key for maintenance/cleanup endpoints
+    ADMIN_API_KEY: str | None = None
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def normalize_database_url(cls, value: str) -> str:

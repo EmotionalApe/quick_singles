@@ -1,7 +1,8 @@
+from datetime import timedelta
 import hashlib
 import secrets
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
+from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -24,6 +25,7 @@ from app.services.scoring import (
     match_is_won_by_chasing,
     validate_event,
 )
+from app.services.cleanup import cleanup_old_matches
 
 
 router = APIRouter(prefix="/matches", tags=["matches"])
@@ -521,3 +523,25 @@ def undo_last_event(
         "status": match.status,
         "undone_event_id": last_event.id,
     }
+
+
+@router.post("/maintenance/cleanup", tags=["maintenance"])
+def trigger_cleanup(
+    hours: float = 24.0,
+    only_completed: bool = False,
+    dry_run: bool = False,
+    x_admin_key: str | None = Header(default=None, alias="X-Admin-Key"),
+    db: Session = Depends(get_db),
+):
+    if settings.ADMIN_API_KEY and x_admin_key != settings.ADMIN_API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing X-Admin-Key header",
+        )
+
+    return cleanup_old_matches(
+        db=db,
+        older_than=timedelta(hours=hours),
+        only_completed=only_completed,
+        dry_run=dry_run,
+    )
