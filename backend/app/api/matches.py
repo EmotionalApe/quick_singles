@@ -73,28 +73,13 @@ def create_match(
     )
 
 
-@router.get("/{match_id}", response_model=MatchResponse)
-def get_match(
-    match_id: int,
-    scorer_token: str | None = Cookie(default=None),
-    db: Session = Depends(get_db),
-):
-    match = db.get(Match, match_id)
-
-    if match is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Match not found",
-        )
-
+def build_match_response(
+    match: Match,
+    events: list[MatchEvent],
+    scorer_token: str | None,
+) -> MatchResponse:
     scorer_active = match.scorer_token_hash is not None
     viewer_role = "SCORER" if verify_scorer(match, scorer_token) else "VIEWER"
-
-    events = db.scalars(
-        select(MatchEvent)
-        .where(MatchEvent.match_id == match_id)
-        .order_by(MatchEvent.sequence)
-    ).all()
 
     innings_1_events = [
         event for event in events
@@ -158,7 +143,30 @@ def get_match(
     )
 
 
-@router.post("/{match_id}/events")
+@router.get("/{match_id}", response_model=MatchResponse)
+def get_match(
+    match_id: int,
+    scorer_token: str | None = Cookie(default=None),
+    db: Session = Depends(get_db),
+):
+    match = db.get(Match, match_id)
+
+    if match is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Match not found",
+        )
+
+    events = db.scalars(
+        select(MatchEvent)
+        .where(MatchEvent.match_id == match_id)
+        .order_by(MatchEvent.sequence)
+    ).all()
+
+    return build_match_response(match, events, scorer_token)
+
+
+@router.post("/{match_id}/events", response_model=MatchResponse)
 def add_event(
     match_id: int,
     event_data: ScoringEventCreate,
@@ -233,6 +241,7 @@ def add_event(
     updated_events = events + [event]
     updated_score = calculate_innings_score(updated_events)
 
+    first_innings_events: list[MatchEvent] = []
     if match.current_innings == 1:
         if innings_is_complete(match, updated_score):
             match.status = "INNINGS_BREAK"
@@ -259,17 +268,12 @@ def add_event(
             match.status = "COMPLETED"
 
     db.commit()
-    db.refresh(event)
 
-    return {
-        "event_id": event.id,
-        "type": event.type,
-        "runs": event.runs,
-        "legal": event.legal,
-    }
+    all_events = updated_events if match.current_innings == 1 else first_innings_events + updated_events
+    return build_match_response(match, all_events, scorer_token)
 
 
-@router.post("/{match_id}/end-innings")
+@router.post("/{match_id}/end-innings", response_model=MatchResponse)
 def end_innings(
     match_id: int,
     scorer_token: str | None = Cookie(default=None),
@@ -302,13 +306,16 @@ def end_innings(
 
     db.commit()
 
-    return {
-        "status": match.status,
-        "current_innings": match.current_innings,
-    }
+    all_events = db.scalars(
+        select(MatchEvent)
+        .where(MatchEvent.match_id == match_id)
+        .order_by(MatchEvent.sequence)
+    ).all()
+
+    return build_match_response(match, all_events, scorer_token)
 
 
-@router.post("/{match_id}/start-innings")
+@router.post("/{match_id}/start-innings", response_model=MatchResponse)
 def start_second_innings(
     match_id: int,
     scorer_token: str | None = Cookie(default=None),
@@ -342,10 +349,13 @@ def start_second_innings(
 
     db.commit()
 
-    return {
-        "status": match.status,
-        "current_innings": match.current_innings,
-    }
+    all_events = db.scalars(
+        select(MatchEvent)
+        .where(MatchEvent.match_id == match_id)
+        .order_by(MatchEvent.sequence)
+    ).all()
+
+    return build_match_response(match, all_events, scorer_token)
 
 
 @router.post("/{match_id}/scorer")
@@ -450,7 +460,7 @@ def leave_scorer(
     }
 
 
-@router.post("/{match_id}/undo")
+@router.post("/{match_id}/undo", response_model=MatchResponse)
 def undo_last_event(
     match_id: int,
     scorer_token: str | None = Cookie(default=None),
@@ -499,6 +509,7 @@ def undo_last_event(
 
     current_score = calculate_innings_score(remaining_events)
 
+    first_innings_events: list[MatchEvent] = []
     if match.current_innings == 1:
         if not innings_is_complete(match, current_score):
             match.status = "INNINGS_1"
@@ -517,7 +528,5 @@ def undo_last_event(
 
     db.commit()
 
-    return {
-        "status": match.status,
-        "undone_event_id": last_event.id,
-    }
+    all_events = remaining_events if match.current_innings == 1 else first_innings_events + remaining_events
+    return build_match_response(match, all_events, scorer_token)

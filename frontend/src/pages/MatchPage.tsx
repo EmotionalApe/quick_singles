@@ -138,20 +138,25 @@ export const MatchPage: React.FC = () => {
 
     try {
       setIsScoring(true);
-      await scoreEvent(matchId, { type, runs });
-      await fetchMatchState(true);
+      const updatedMatch = await scoreEvent(matchId, { type, runs });
+      if (!isMountedRef.current) return;
+      setMatch(updatedMatch);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       const status = err.response?.status;
       if (status === 403) {
         setActionError('Your scorer session is no longer active.');
-        await fetchMatchState(true);
       } else {
         setActionError(
           err.response?.data?.detail || 'Failed to register delivery.'
         );
       }
+      await fetchMatchState(true);
     } finally {
-      setIsScoring(false);
+      if (isMountedRef.current) {
+        setIsScoring(false);
+      }
     }
   };
 
@@ -160,12 +165,18 @@ export const MatchPage: React.FC = () => {
     setActionError(null);
     try {
       setIsScoring(true);
-      await undoLastEvent(matchId);
-      await fetchMatchState(true);
+      const updatedMatch = await undoLastEvent(matchId);
+      if (!isMountedRef.current) return;
+      setMatch(updatedMatch);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       setActionError(err.response?.data?.detail || 'Cannot undo delivery.');
+      await fetchMatchState(true);
     } finally {
-      setIsScoring(false);
+      if (isMountedRef.current) {
+        setIsScoring(false);
+      }
     }
   };
 
@@ -174,12 +185,18 @@ export const MatchPage: React.FC = () => {
     setActionError(null);
     try {
       setIsScoring(true);
-      await endInnings(matchId);
-      await fetchMatchState(true);
+      const updatedMatch = await endInnings(matchId);
+      if (!isMountedRef.current) return;
+      setMatch(updatedMatch);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       setActionError(err.response?.data?.detail || 'Failed to end innings.');
+      await fetchMatchState(true);
     } finally {
-      setIsScoring(false);
+      if (isMountedRef.current) {
+        setIsScoring(false);
+      }
     }
   };
 
@@ -188,14 +205,20 @@ export const MatchPage: React.FC = () => {
     setActionError(null);
     try {
       setIsScoring(true);
-      await startInnings(matchId);
-      await fetchMatchState(true);
+      const updatedMatch = await startInnings(matchId);
+      if (!isMountedRef.current) return;
+      setMatch(updatedMatch);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       setActionError(
         err.response?.data?.detail || 'Failed to start second innings.'
       );
+      await fetchMatchState(true);
     } finally {
-      setIsScoring(false);
+      if (isMountedRef.current) {
+        setIsScoring(false);
+      }
     }
   };
 
