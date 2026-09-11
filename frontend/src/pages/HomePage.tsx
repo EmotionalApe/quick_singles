@@ -62,6 +62,16 @@ export const HomePage: React.FC = () => {
               </Link>
             </div>
 
+            {/* Back to Games */}
+            <div className="pt-2 text-center">
+               <Link
+                 to="/"
+                 className="text-xs font-bold text-slate-500 hover:text-black transition-colors"
+               >
+                 ← Back to Games
+               </Link>
+            </div>
+
             {/* Quick Toss Card */}
             <div className="rounded-2xl border-2 border-black bg-white p-5 shadow-[3px_3px_0px_#000]">
               <div className="flex items-center justify-between mb-1">

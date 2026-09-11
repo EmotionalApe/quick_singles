@@ -200,7 +200,7 @@ export const MatchPage: React.FC = () => {
             </p>
             <div className="pt-2">
               <Link
-                to="/"
+                to="/cricket"
                 className="rounded-xl border-2 border-black bg-[#ffd260] px-4 py-2 text-xs font-black text-black shadow-[2px_2px_0px_#000]"
               >
                 Go Home

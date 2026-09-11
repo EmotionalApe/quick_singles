@@ -73,7 +73,7 @@ export const CreateMatchPage: React.FC = () => {
         <div className="w-full max-w-sm">
           <div className="mb-4">
             <Link
-              to="/"
+              to="/cricket"
               className="text-xs font-bold text-slate-500 hover:text-black transition-colors"
             >
               ← Back
