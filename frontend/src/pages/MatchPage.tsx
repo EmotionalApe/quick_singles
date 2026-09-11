@@ -9,6 +9,7 @@ import { InningsBreakCard } from '../components/InningsBreakCard';
 import { MatchResultCard } from '../components/MatchResultCard';
 import { ShareModal } from '../components/ShareModal';
 import { NetworkBanner } from '../components/NetworkBanner';
+import { SyncBar } from '../components/SyncBar';
 import {
   getMatch,
   joinAsScorer,
@@ -32,6 +33,8 @@ export const MatchPage: React.FC = () => {
   const [notFound, setNotFound] = useState(false);
   const [networkError, setNetworkError] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Modals & Action States
   const [shareModalOpen, setShareModalOpen] = useState(isNewMatch);
@@ -53,6 +56,7 @@ export const MatchPage: React.FC = () => {
       const data = await getMatch(matchId);
       if (!isMountedRef.current) return;
       setMatch(data);
+      setLastSyncedAt(new Date());
       setNetworkError(false);
       setNotFound(false);
     } catch (err: any) {
@@ -69,20 +73,28 @@ export const MatchPage: React.FC = () => {
     }
   }, [matchId]);
 
-  // Initial load and polling every 2.5 seconds
+  // Initial load on mount (no automatic polling)
   useEffect(() => {
     isMountedRef.current = true;
     fetchMatchState(false);
 
-    const intervalId = setInterval(() => {
-      fetchMatchState(true);
-    }, 2500);
-
     return () => {
       isMountedRef.current = false;
-      clearInterval(intervalId);
     };
   }, [fetchMatchState]);
+
+  // Manual score sync
+  const handleManualSync = async () => {
+    if (isSyncing) return;
+    try {
+      setIsSyncing(true);
+      await fetchMatchState(true);
+    } finally {
+      if (isMountedRef.current) {
+        setIsSyncing(false);
+      }
+    }
+  };
 
   // Join as Scorer
   const handleJoinScorer = async (force: boolean = false) => {
@@ -126,20 +138,25 @@ export const MatchPage: React.FC = () => {
 
     try {
       setIsScoring(true);
-      await scoreEvent(matchId, { type, runs });
-      await fetchMatchState(true);
+      const updatedMatch = await scoreEvent(matchId, { type, runs });
+      if (!isMountedRef.current) return;
+      setMatch(updatedMatch);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       const status = err.response?.status;
       if (status === 403) {
         setActionError('Your scorer session is no longer active.');
-        await fetchMatchState(true);
       } else {
         setActionError(
           err.response?.data?.detail || 'Failed to register delivery.'
         );
       }
+      await fetchMatchState(true);
     } finally {
-      setIsScoring(false);
+      if (isMountedRef.current) {
+        setIsScoring(false);
+      }
     }
   };
 
@@ -148,12 +165,18 @@ export const MatchPage: React.FC = () => {
     setActionError(null);
     try {
       setIsScoring(true);
-      await undoLastEvent(matchId);
-      await fetchMatchState(true);
+      const updatedMatch = await undoLastEvent(matchId);
+      if (!isMountedRef.current) return;
+      setMatch(updatedMatch);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       setActionError(err.response?.data?.detail || 'Cannot undo delivery.');
+      await fetchMatchState(true);
     } finally {
-      setIsScoring(false);
+      if (isMountedRef.current) {
+        setIsScoring(false);
+      }
     }
   };
 
@@ -162,12 +185,18 @@ export const MatchPage: React.FC = () => {
     setActionError(null);
     try {
       setIsScoring(true);
-      await endInnings(matchId);
-      await fetchMatchState(true);
+      const updatedMatch = await endInnings(matchId);
+      if (!isMountedRef.current) return;
+      setMatch(updatedMatch);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       setActionError(err.response?.data?.detail || 'Failed to end innings.');
+      await fetchMatchState(true);
     } finally {
-      setIsScoring(false);
+      if (isMountedRef.current) {
+        setIsScoring(false);
+      }
     }
   };
 
@@ -176,14 +205,20 @@ export const MatchPage: React.FC = () => {
     setActionError(null);
     try {
       setIsScoring(true);
-      await startInnings(matchId);
-      await fetchMatchState(true);
+      const updatedMatch = await startInnings(matchId);
+      if (!isMountedRef.current) return;
+      setMatch(updatedMatch);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
+      if (!isMountedRef.current) return;
       setActionError(
         err.response?.data?.detail || 'Failed to start second innings.'
       );
+      await fetchMatchState(true);
     } finally {
-      setIsScoring(false);
+      if (isMountedRef.current) {
+        setIsScoring(false);
+      }
     }
   };
 
@@ -287,6 +322,15 @@ export const MatchPage: React.FC = () => {
         {/* Scoreboard Display (compact in scorer mode for zero-scroll viewport) */}
         <Scoreboard match={match} compact={isScorer && isLiveInnings} />
 
+        {/* Sync Bar for Viewers or outside live scoring */}
+        {(!isScorer || !isLiveInnings) && (
+          <SyncBar
+            lastSyncedAt={lastSyncedAt}
+            isSyncing={isSyncing}
+            onSync={handleManualSync}
+          />
+        )}
+
         {/* Recent Scoring Balls */}
         <RecentEvents events={match.recent_events || []} />
 
@@ -332,6 +376,9 @@ export const MatchPage: React.FC = () => {
               onUndo={handleUndo}
               onEndInnings={handleEndInnings}
               onLeaveScorer={handleLeaveScorer}
+              onSync={handleManualSync}
+              isSyncing={isSyncing}
+              lastSyncedAt={lastSyncedAt}
               disabled={isScoring}
             />
           </div>

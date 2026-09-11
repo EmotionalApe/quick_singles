@@ -42,8 +42,8 @@ export async function leaveScorer(
 export async function scoreEvent(
   matchId: number,
   event: ScoringEventRequest
-): Promise<{ event_id: number; type: string; runs: number; legal: boolean }> {
-  const response = await api.post(
+): Promise<Match> {
+  const response = await api.post<Match>(
     `/matches/${matchId}/events`,
     event
   );
@@ -52,8 +52,8 @@ export async function scoreEvent(
 
 export async function endInnings(
   matchId: number
-): Promise<{ status: string; current_innings: number }> {
-  const response = await api.post<{ status: string; current_innings: number }>(
+): Promise<Match> {
+  const response = await api.post<Match>(
     `/matches/${matchId}/end-innings`
   );
   return response.data;
@@ -61,8 +61,8 @@ export async function endInnings(
 
 export async function startInnings(
   matchId: number
-): Promise<{ status: string; current_innings: number }> {
-  const response = await api.post<{ status: string; current_innings: number }>(
+): Promise<Match> {
+  const response = await api.post<Match>(
     `/matches/${matchId}/start-innings`
   );
   return response.data;
@@ -70,8 +70,8 @@ export async function startInnings(
 
 export async function undoLastEvent(
   matchId: number
-): Promise<{ status: string; undone_event_id: number }> {
-  const response = await api.post<{ status: string; undone_event_id: number }>(
+): Promise<Match> {
+  const response = await api.post<Match>(
     `/matches/${matchId}/undo`
   );
   return response.data;

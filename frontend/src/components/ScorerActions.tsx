@@ -4,6 +4,9 @@ interface ScorerActionsProps {
   onUndo: () => Promise<void>;
   onEndInnings: () => Promise<void>;
   onLeaveScorer: () => Promise<void>;
+  onSync?: () => Promise<void>;
+  isSyncing?: boolean;
+  lastSyncedAt?: Date | null;
   disabled?: boolean;
 }
 
@@ -11,6 +14,9 @@ export const ScorerActions: React.FC<ScorerActionsProps> = ({
   onUndo,
   onEndInnings,
   onLeaveScorer,
+  onSync,
+  isSyncing = false,
+  lastSyncedAt = null,
   disabled = false,
 }) => {
   const [confirmDialog, setConfirmDialog] = useState<
@@ -41,15 +47,49 @@ export const ScorerActions: React.FC<ScorerActionsProps> = ({
   return (
     <>
       <div className="flex items-center justify-between gap-2">
-        {/* Undo Button */}
-        <button
-          type="button"
-          disabled={disabled || isProcessing}
-          onClick={onUndo}
-          className="rounded-xl border-2 border-black bg-white px-3 py-1.5 text-xs font-bold text-black shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all disabled:opacity-40"
-        >
-          Undo Ball
-        </button>
+        {/* Left Side: Undo Ball and Sync */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            disabled={disabled || isProcessing}
+            onClick={onUndo}
+            className="rounded-xl border-2 border-black bg-white px-3 py-1.5 text-xs font-bold text-black shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all disabled:opacity-40"
+          >
+            Undo Ball
+          </button>
+
+          {onSync && (
+            <button
+              type="button"
+              disabled={disabled || isProcessing || isSyncing}
+              onClick={onSync}
+              className="flex items-center gap-1 rounded-xl border-2 border-black bg-white px-2.5 py-1.5 text-xs font-bold text-black shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all disabled:opacity-40 hover:bg-slate-50"
+              title={
+                lastSyncedAt
+                  ? `Last synced: ${lastSyncedAt.toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                    })}`
+                  : 'Sync scores'
+              }
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`h-3 w-3 shrink-0 ${isSyncing ? 'animate-spin' : ''}`}
+              >
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+              </svg>
+              <span>{isSyncing ? '...' : 'Sync'}</span>
+            </button>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           {/* End Innings Button */}
