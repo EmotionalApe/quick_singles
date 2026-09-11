@@ -169,3 +169,6 @@ curl -X POST "https://your-api.onrender.com/matches/maintenance/cleanup?hours=24
      -H "X-Admin-Key: your-secret-cleanup-key"
 ```
 
+For complete step-by-step setup instructions with screenshots and alternate methods (GitHub Actions / Linux VPS), see the [Automated Database Cleanup Guide](file:///c:/Programming/cricket-scorer/CRON_CLEANUP_GUIDE.md).
+
+
