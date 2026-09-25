@@ -34,6 +34,19 @@ class MatchResponse(BaseModel):
     result : MatchResultResponse | None
     recent_events: list[str] = Field(default_factory=list)
 
+class MatchHistoryResponse(BaseModel):
+    match_id: int
+    team_1: str
+    team_2: str
+    overs_per_innings: int
+    status: str
+    innings_1: InningsScoreResponse
+    innings_2: InningsScoreResponse
+    result : MatchResultResponse | None
+
+class AllMatchesResponse(BaseModel):
+    matches: list[MatchHistoryResponse] = Field(default_factory=list)
+    
 class ScoringEventCreate(BaseModel):
     type : Literal["RUN", "WICKET", "NO_BALL", "WIDE"]
     runs : int | None = None

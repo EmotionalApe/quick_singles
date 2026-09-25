@@ -16,6 +16,8 @@ from app.schemas.match import (
     MatchResponse,
     MatchResultResponse,
     ScoringEventCreate,
+    MatchHistoryResponse,
+    AllMatchesResponse
 )
 from app.services.scoring import (
     calculate_innings_score,
@@ -72,6 +74,81 @@ def create_match(
         status=match.status,
     )
 
+@router.get("/", response_model=AllMatchesResponse)
+def get_all_matches(
+    db: Session = Depends(get_db)
+):
+    matches = db.query(Match).all()
+
+    if not matches:
+        return AllMatchesResponse(
+            matches=[]
+        )
+
+    history_responses: list[MatchHistoryResponse] = []
+
+    for match in matches:
+        # get events for this match
+        match_events = db.scalars(
+            select(MatchEvent)
+            .where(MatchEvent.match_id == match.id)
+        ).all()
+
+        # build response for this match     
+        history_response = build_match_history_response(match, match_events)
+        history_responses.append(history_response)
+
+    return AllMatchesResponse(
+        matches= history_responses
+    )
+
+def build_match_history_response(
+    match: Match,
+    events: list[MatchEvent],
+) -> MatchHistoryResponse:
+    innings_1_events = [
+        event for event in events
+        if event.innings == 1
+    ]   
+
+    innings_2_events = [
+        event for event in events
+        if event.innings == 2
+    ]
+    innings_1 = calculate_innings_score(innings_1_events)
+    innings_2 = calculate_innings_score(innings_2_events)
+
+    result = None
+    if match.status == "COMPLETED":
+        calculated_result = calculate_match_result(
+            match=match,
+            first_innings=innings_1,
+            second_innings=innings_2,
+        )
+        result = MatchResultResponse(
+            winner=calculated_result.winner,
+            type=calculated_result.type,
+            margin=calculated_result.margin,
+        )
+
+    return MatchHistoryResponse(
+        match_id=match.id,
+        team_1=match.team_1,
+        team_2=match.team_2,
+        overs_per_innings=match.overs_per_innings,
+        status=match.status,
+        innings_1=InningsScoreResponse(
+            score=innings_1.score,
+            wickets=innings_1.wickets,
+            overs=innings_1.overs,
+        ),
+        innings_2=InningsScoreResponse(
+            score=innings_2.score,
+            wickets=innings_2.wickets,
+            overs=innings_2.overs,
+        ),
+        result=result,
+    )
 
 def build_match_response(
     match: Match,
@@ -164,8 +241,7 @@ def get_match(
     ).all()
 
     return build_match_response(match, events, scorer_token)
-
-
+       
 @router.post("/{match_id}/events", response_model=MatchResponse)
 def add_event(
     match_id: int,

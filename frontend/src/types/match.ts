@@ -50,3 +50,23 @@ export interface ScoringEventRequest {
   type: EventType;
   runs?: number;
 }
+
+export interface MatchHistoryResponse {
+  match_id: number;
+  team_1: string;
+  team_2: string;
+  overs_per_innings: number;
+  status: MatchStatus;
+  innings_1: InningsScore;
+  innings_2: InningsScore;
+  result: MatchResult | null;
+  recent_events: string[];
+}
+
+export interface AllMatchesResponse {
+  matches: MatchHistoryResponse[];
+}
+
+export interface MatchHistoryCardProps {
+  match: MatchHistoryResponse;
+}

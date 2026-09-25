@@ -50,6 +50,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               Share
             </button>
           )}
+          
+          <Link to="/matches" className="text-xs font-bold text-slate-500 hover:text-black transition-colors">
+            View Match History
+          </Link>
 
           <Link
             to="/create"

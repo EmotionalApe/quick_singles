@@ -1,5 +1,6 @@
 import { api } from './client';
 import type {
+  AllMatchesResponse,
   Match,
   MatchCreateRequest,
   MatchCreateResponse,
@@ -15,6 +16,11 @@ export async function createMatch(
 
 export async function getMatch(matchId: number): Promise<Match> {
   const response = await api.get<Match>(`/matches/${matchId}`);
+  return response.data;
+}
+
+export async function getAllMatches(): Promise<AllMatchesResponse> {
+  const response = await api.get<AllMatchesResponse>(`/matches/`);
   return response.data;
 }
 
