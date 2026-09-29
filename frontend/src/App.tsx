@@ -11,8 +11,8 @@ export function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/create" element={<CreateMatchPage />} />
         <Route path="/match/:matchId" element={<MatchPage />} />
+        <Route path="/matches" element={<MatchHistoryPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
-        <Route path="matches" element={<MatchHistoryPage />} />
       </Routes>
     </BrowserRouter>
   );

@@ -60,7 +60,6 @@ export interface MatchHistoryResponse {
   innings_1: InningsScore;
   innings_2: InningsScore;
   result: MatchResult | null;
-  recent_events: string[];
 }
 
 export interface AllMatchesResponse {

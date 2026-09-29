@@ -1,3 +1,4 @@
+from collections import defaultdict
 import hashlib
 import secrets
 
@@ -78,28 +79,31 @@ def create_match(
 def get_all_matches(
     db: Session = Depends(get_db)
 ):
-    matches = db.query(Match).all()
+    matches = db.scalars(
+        select(Match).order_by(Match.created_at.desc(), Match.id.desc())
+    ).all()
 
     if not matches:
-        return AllMatchesResponse(
-            matches=[]
-        )
+        return AllMatchesResponse(matches=[])
 
-    history_responses: list[MatchHistoryResponse] = []
+    match_ids = [m.id for m in matches]
+    events = db.scalars(
+        select(MatchEvent)
+        .where(MatchEvent.match_id.in_(match_ids))
+        .order_by(MatchEvent.match_id, MatchEvent.sequence.asc())
+    ).all()
 
-    for match in matches:
-        # get events for this match
-        match_events = db.scalars(
-            select(MatchEvent)
-            .where(MatchEvent.match_id == match.id)
-        ).all()
+    events_by_match: dict[int, list[MatchEvent]] = defaultdict(list)
+    for event in events:
+        events_by_match[event.match_id].append(event)
 
-        # build response for this match     
-        history_response = build_match_history_response(match, match_events)
-        history_responses.append(history_response)
+    history_responses = [
+        build_match_history_response(match, events_by_match[match.id])
+        for match in matches
+    ]
 
     return AllMatchesResponse(
-        matches= history_responses
+        matches=history_responses
     )
 
 def build_match_history_response(

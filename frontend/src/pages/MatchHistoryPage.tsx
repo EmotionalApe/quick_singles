@@ -29,8 +29,8 @@ export const MatchHistoryPage: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-[#f3f2f8] text-black">
       <Navbar />
 
-      <main className="flex-1 flex items-center justify-center px-4 py-6 sm:px-6">
-        <div className="w-full max-w-sm">
+      <main className="flex-1 flex justify-center px-4 py-6 sm:px-6">
+        <div className="w-full max-w-md">
           <div className="mb-4">
             <Link
               to="/"
@@ -56,7 +56,7 @@ export const MatchHistoryPage: React.FC = () => {
               No matches found.
             </div>
           ) : (
-            <div className="max-h-[60vh] overflow-y-auto space-y-3">
+            <div className="space-y-3 pb-8">
               {matches.map((match) => (
                 <MatchHistoryCard key={match.match_id} match={match} />
               ))}

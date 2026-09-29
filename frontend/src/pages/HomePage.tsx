@@ -114,6 +114,22 @@ export const HomePage: React.FC = () => {
                 </button>
               </form>
             </div>
+
+            {/* Match History Card */}
+            <div className="rounded-2xl border-2 border-black bg-white p-5 shadow-[3px_3px_0px_#000]">
+              <h2 className="text-sm font-black text-black mb-1">
+                Match History
+              </h2>
+              <p className="text-xs text-slate-600 mb-3">
+                Browse recent matches, scores, and results.
+              </p>
+              <Link
+                to="/matches"
+                className="flex w-full items-center justify-center rounded-xl border-2 border-black bg-white py-2.5 px-4 text-xs font-black text-black shadow-[2px_2px_0px_#000] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none hover:bg-slate-50 transition-all"
+              >
+                Browse History →
+              </Link>
+            </div>
           </div>
         </div>
       </main>
